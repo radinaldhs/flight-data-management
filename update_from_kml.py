@@ -19,8 +19,8 @@ EDIT_URL = (
 )
 
 # ← your working token & cookie
-TOKEN = 'Q4YsJMEI-RnMmfmDewfgUKjqM-I28Xw5LEAdDpoQHBpGZas32IclUKZOW2nJRbT0wp3PF2cCog7Ib_4xkHxYnk_BUnZRnGHDemBcM490LS6ZRpTGh4epEpIPGlIZH_DncEcJv7RPbdLTzOfiJfvVc8V0nczW0CXugZIby6jMmYXu41bVX6-iXHfOANL05maZ'
-AGS_ROLES = 'PKjupvu98fl3WydfLXZYNru3oi4WhW48JV8eW5aS1WHSKsUznbPjRZLmsENQmOfbtJGzuMIQnbo='
+TOKEN = ''
+AGS_ROLES = ''
 
 # prepare session
 session = requests.Session()

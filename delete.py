@@ -3,11 +3,11 @@ import sys
 
 # --- CONFIG --- 
 USER_ID        = 'agasha123'
-QUERY_TOKEN    = '-nVyvaNYAe2tOX8ZpxeJ2Ax8BUZ8DaAS0SVBpOJmc_xg99dBq6I0yGqEpBLluYVMmjRG5TWCoJxVCbzB_fk6cvqzyaCFLOSrn8Xd-zBdXKaVVzRexbWfMxl8yFr_3sRxg-c-sH9G7b8saMvhUKbLfaaIcfyNw8ROj8fyplvSCx0L417WZE907iOUQ1DZRtMk'
-DELETE_TOKEN   = 'QCMVv-lXk1wIiAutBTNHY_3kXQvegJ523XmxSl8AtQ98s_e7F7h1J08xx0UG0LIkWO8a4KXjBp3HbluJBui0ZY3iouFqXX2CkvCQ0VOMM9iIJ8IGef9Pc9zojjhBKpXamsulOf1DvnKD3oc0-JJUKqSlTrto6pW5ZYRY6e2pyYpTJMCqcn_GSx7S4rX68L0B'
+QUERY_TOKEN    = ''
+DELETE_TOKEN   = ''
 
 # The cookie you saw in your browser / cURL
-COOKIE_VALUE   = 'PKjupvu98fl3WydfLXZYNru3oi4WhW48JV8eW5aS1WHSKsUznbPjRZLmsENQmOfbtJGzuMIQnbo='
+COOKIE_VALUE   = ''
 
 BASE_URL       = "https://maps.sinarmasforestry.com/arcgis/rest/services/PreFo/DroneSprayingVendor/FeatureServer/0"
 

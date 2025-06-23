@@ -6,7 +6,7 @@ import sys
 INPUT_FILE  = 'feedback.xlsx'
 OUTPUT_FILE = 'feedback_checked.xlsx'
 USER_ID     = 'agasha123'
-TOKEN       = '-nVyvaNYAe2tOX8ZpxeJ2Ax8BUZ8DaAS0SVBpOJmc_xg99dBq6I0yGqEpBLluYVMmjRG5TWCoJxVCbzB_fk6cvqzyaCFLOSrn8Xd-zBdXKaVVzRexbWfMxl8yFr_3sRxg-c-sH9G7b8saMvhUKbLfaaIcfyNw8ROj8fyplvSCx0L417WZE907iOUQ1DZRtMk'
+TOKEN       = ''
 BASE_URL    = "https://maps.sinarmasforestry.com/arcgis/rest/services/PreFo/DroneSprayingVendor/FeatureServer/0/query"
 
 def find_spk_col(df: pd.DataFrame) -> str:

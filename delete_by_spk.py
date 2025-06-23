@@ -1,9 +1,9 @@
 import sys
 import requests
 
-DELETE_TOKEN = '5isN3g5ZBdi3Y2zY1LoRjf_nRkkh1v4PfR-9ALTORA-Rw-eU61jZEH_N2wxa7ESgyV9LQ4of0Cd7T73eU8AEJfJl5SWQTqxrqJnxxgFZd92Ix71qpsfothtOXahWCmYEsCSeOrqI1fpV9stYzWla9GTPPxKWHRc4n9ENxx2MaLs0Qqgjn0XxOGJzmAe8L5m3'
+DELETE_TOKEN = ''
 
-COOKIE_VALUE   = 'PKjupvu98fl3WydfLXZYNru3oi4WhW48JV8eW5aS1WHSKsUznbPjRZLmsENQmOfbtJGzuMIQnbo='
+COOKIE_VALUE   = ''
 
 BASE_URL = "https://maps.sinarmasforestry.com/arcgis/rest/services/PreFo/DroneSprayingVendor/FeatureServer/0"
 

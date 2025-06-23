@@ -3,7 +3,7 @@ import sys
 
 # --- CONFIG ---
 USER_ID = 'agasha123'
-TOKEN   = 'Q4YsJMEI-RnMmfmDewfgUKjqM-I28Xw5LEAdDpoQHBpGZas32IclUKZOW2nJRbT0wp3PF2cCog7Ib_4xkHxYnk_BUnZRnGHDemBcM490LS6ZRpTGh4epEpIPGlIZH_DncEcJv7RPbdLTzOfiJfvVc8V0nczW0CXugZIby6jMmYXu41bVX6-iXHfOANL05maZ'
+TOKEN   = ''
 FEATURE_QUERY_URL = (
     "https://maps.sinarmasforestry.com/arcgis/rest/services/"
     "PreFo/DroneSprayingVendor/FeatureServer/0/query"
