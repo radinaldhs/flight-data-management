@@ -45,12 +45,11 @@ def save_token_to_cache(token, expires, cookie):
 
 
 def get_final_token(session):
-    """3-step token generation logic with proper accounts."""
     cached = load_token_from_cache()
     if cached:
-        return cached['token'], cached['cookie']
+        return cached['token']
 
-    # Step 1: Login as agasha123
+    # Step 1: agasha123
     step1 = session.post(TOKEN_URL, headers=TOKEN_HEADERS, data={
         'request': 'getToken',
         'username': os.getenv('GIS_AUTH_USERNAME'),
@@ -63,7 +62,7 @@ def get_final_token(session):
     if not step1_token:
         raise Exception("Failed step 1: agasha123 login")
 
-    # Step 2: Generate scoped token for MapServer
+    # Step 2: scoped token
     step2 = session.post(TOKEN_URL, headers=TOKEN_HEADERS, data={
         'request': 'getToken',
         'serverUrl': SERVER_URL,
@@ -75,7 +74,7 @@ def get_final_token(session):
     if not scoped_token:
         raise Exception("Failed step 2: scoped token")
 
-    # Step 3: Login as fmiseditor
+    # Step 3: fmiseditor
     step3 = session.post(TOKEN_URL, headers=TOKEN_HEADERS, data={
         'request': 'getToken',
         'username': os.getenv('GIS_USERNAME'),
@@ -90,12 +89,9 @@ def get_final_token(session):
     if not final_token or not expires:
         raise Exception("Failed step 3: final login")
 
-    cookie = session.cookies.get_dict().get('AGS_ROLES')
-    if not cookie:
-        raise Exception("Failed to get AGS_ROLES cookie")
-
-    save_token_to_cache(final_token, expires, cookie)
-    return final_token, cookie
+    # No more cookie logic
+    save_token_to_cache(final_token, expires, "")
+    return final_token
 
 
 def fetch_objectids_for_spk(session, token, spk):
@@ -111,11 +107,10 @@ def fetch_objectids_for_spk(session, token, spk):
     return [f['attributes']['OBJECTID'] for f in r.json().get('features', [])]
 
 
-def delete_objectid(session, token, cookie, objectid):
+def delete_objectid(session, token, objectid):
     headers = {
         **TOKEN_HEADERS,
         'Origin': 'https://maps.sinarmasforestry.com',
-        'Cookie': f'AGS_ROLES="{cookie}"',
     }
     data = {
         'f': 'json',
@@ -141,7 +136,7 @@ def main():
     session = requests.Session()
 
     try:
-        token, cookie = get_final_token(session)
+        token = get_final_token(session)
         spk = sys.argv[1]
         oids = fetch_objectids_for_spk(session, token, spk)
 
@@ -152,7 +147,7 @@ def main():
         print(f"Found {len(oids)} features for SPKNumber {spk}: {oids}")
         for oid in oids:
             print(f"> Deleting OBJECTID={oid} …", end=" ")
-            resp = delete_objectid(session, token, cookie, oid)
+            resp = delete_objectid(session, token, oid)
             print(resp)
 
         print("\n✅ Done.")
