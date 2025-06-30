@@ -136,6 +136,8 @@ ENV/
 env.bak/
 venv.bak/
 
+.token_cache.json
+
 # Spyder project settings
 .spyderproject
 .spyproject

@@ -2,7 +2,7 @@ import requests
 import sys
 
 # --- CONFIG --- 
-USER_ID        = 'agasha123'
+USER_ID        = ''
 QUERY_TOKEN    = ''
 DELETE_TOKEN   = ''
 

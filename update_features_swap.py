@@ -2,18 +2,16 @@ import os
 import sys
 import json
 import time
-import pandas as pd
 import requests
+from collections import defaultdict
 from dotenv import load_dotenv
 
 load_dotenv()
 
-INPUT_FILE = 'feedback.xlsx'
-OUTPUT_FILE = 'feedback_checked.xlsx'
-
 BASE_URL = "https://maps.sinarmasforestry.com/arcgis/rest/services/PreFo/DroneSprayingVendor/FeatureServer/0"
 SERVER_URL = BASE_URL.replace('/FeatureServer/0', '/MapServer')
 QUERY_URL = f"{BASE_URL}/query"
+APPLY_EDITS_URL = f"{BASE_URL}/applyEdits"
 TOKEN_URL = "https://maps.sinarmasforestry.com/portal/sharing/rest/generateToken"
 TOKEN_CACHE_FILE = ".token_cache.json"
 
@@ -98,76 +96,110 @@ def get_final_token(session):
     return token, cookie
 
 
-def find_spk_col(df: pd.DataFrame) -> str:
-    for col in df.columns:
-        if col.strip().lower() == 'spknumber':
-            return col
-    raise KeyError(f"Could not find SPKNumber column. Available: {', '.join(df.columns)}")
-
-
-def fetch_spk_info(session, token, user_id, spk: str):
+def fetch_features(session, token, user_id, where_clause):
     params = {
         'f': 'json',
-        'where': f"(UserID='{user_id}') AND (LOWER(SPKNumber) LIKE '{spk.lower()}%')",
-        'resultRecordCount': 1000,
-        'outFields': 'FlightID,SPKNumber,KeyID,Height,OBJECTID',
+        'where': f"(UserID='{user_id}') AND {where_clause}",
+        'outFields': 'OBJECTID,SPKNumber,KeyID,FlightID,CRT_Date',
         'returnGeometry': 'false',
-        'token': token
+        'token': token,
+        'resultRecordCount': 10000
     }
     r = session.get(QUERY_URL, params=params)
     r.raise_for_status()
-    js = r.json()
+    return r.json().get('features', [])
 
-    feats = js.get('features', [])
-    if not feats:
-        return 'not_uploaded', []
 
-    flight_ids = [f['attributes']['FlightID'] for f in feats]
-    return 'uploaded', flight_ids
+def delete_objectid(session, token, cookie, oid):
+    headers = {
+        **TOKEN_HEADERS,
+        'Origin': 'https://maps.sinarmasforestry.com',
+        'Cookie': f'AGS_ROLES="{cookie}"',
+    }
+    data = {
+        'f': 'json',
+        'deletes': str(oid),
+        'token': token,
+    }
+    r = session.post(APPLY_EDITS_URL, headers=headers, data=data)
+    r.raise_for_status()
+    return r.json()
+
+
+def batch_update(session, token, cookie, updates):
+    headers = {
+        **TOKEN_HEADERS,
+        'Origin': 'https://maps.sinarmasforestry.com',
+        'Cookie': f'AGS_ROLES="{cookie}"',
+    }
+    payload = {
+        'f': 'json',
+        'token': token,
+        'updates': json.dumps(updates)
+    }
+    r = session.post(APPLY_EDITS_URL, headers=headers, data=payload)
+    r.raise_for_status()
+    return r.json()
+
+
+def dedupe_and_split(features):
+    groups = defaultdict(list)
+    for feat in features:
+        attr = feat['attributes']
+        key = (attr['FlightID'], attr['SPKNumber'])
+        groups[key].append(attr)
+
+    keep, delete = [], []
+    for attrs in groups.values():
+        sorted_by_date = sorted(attrs, key=lambda a: a['CRT_Date'], reverse=True)
+        keep.append(sorted_by_date[0])
+        for d in sorted_by_date[1:]:
+            delete.append(d['OBJECTID'])
+    return keep, delete
 
 
 def main():
-    user_id = os.getenv('GIS_AUTH_USERNAME')  # originally agasha123
+    user_id = os.getenv('GIS_AUTH_USERNAME')
     if not user_id:
         print("❌ Please set GIS_AUTH_USERNAME in your .env")
         return
 
     session = requests.Session()
+
     try:
-        token, _ = get_final_token(session)
-        df = pd.read_excel(INPUT_FILE, dtype=str)
+        token, cookie = get_final_token(session)
 
-        try:
-            spk_col = find_spk_col(df)
-        except KeyError as e:
-            print(f"ERROR: {e}", file=sys.stderr)
-            sys.exit(1)
+        print("Fetching features where SPKNumber LIKE 'L%' …")
+        feats = fetch_features(session, token, user_id, "(SPKNumber LIKE 'L%')")
+        print(f" → {len(feats)} records found")
 
-        cache = {}
-        statuses = []
-        flights = []
+        keep_initial, del_initial = dedupe_and_split(feats)
+        print(f"Deleting {len(del_initial)} initial duplicates …")
+        for oid in del_initial:
+            print(" >", delete_objectid(session, token, cookie, oid))
 
-        for idx, raw in enumerate(df[spk_col].fillna('0'), start=1):
-            spk = raw.strip()
-            if spk in ('', '0'):
-                status, fids = 'not_uploaded', []
-            elif spk in cache:
-                status, fids = cache[spk]
-            else:
-                try:
-                    status, fids = fetch_spk_info(session, token, user_id, spk)
-                except Exception as err:
-                    status, fids = f'error: {err}', []
-                cache[spk] = (status, fids)
+        updates = []
+        for attr in keep_initial:
+            updates.append({
+                'attributes': {
+                    'OBJECTID': attr['OBJECTID'],
+                    'SPKNumber': attr['KeyID'],
+                    'KeyID': attr['SPKNumber'],
+                    'CRT_Date': attr['CRT_Date'],
+                }
+            })
 
-            statuses.append(status)
-            flights.append(",".join(fids))
-            print(f"Row {idx}: SPK={spk or '0'} → {status} ({len(fids)} flights)")
+        print(f"Applying {len(updates)} updates (swap SPK⇄Key) …")
+        print(batch_update(session, token, cookie, updates))
 
-        df['Status'] = statuses
-        df['FlightIDs'] = flights
-        df.to_excel(OUTPUT_FILE, index=False)
-        print(f"\n✅ Done — results in {OUTPUT_FILE}")
+        print("Re-fetching features where SPKNumber LIKE '5%' for final de-duplication …")
+        feats2 = fetch_features(session, token, user_id, "(SPKNumber LIKE '5%')")
+        keep_final, del_final = dedupe_and_split(feats2)
+        print(f"Deleting {len(del_final)} post-update duplicates …")
+        for oid in del_final:
+            print(" >", delete_objectid(session, token, cookie, oid))
+
+        print("✅ update_features_swap.py complete.")
 
     except Exception as e:
         print(f"\n❌ Error: {e}")
